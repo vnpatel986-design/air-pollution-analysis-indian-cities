@@ -15,7 +15,7 @@ st.set_page_config(
 # ---------------- LOAD ----------------
 @st.cache_resource
 def load_model():
-    return joblib.load("air_model.pkl")
+    return joblib.load("air_pol_pipe_model.pkl")
 
 @st.cache_data
 def load_data():
