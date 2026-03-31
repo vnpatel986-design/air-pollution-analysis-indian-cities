@@ -1,19 +1,18 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
 import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ------------------- PAGE CONFIG -------------------
+# ---------------- CONFIG ----------------
 st.set_page_config(
-    page_title="Air Pollution Dashboard",
+    page_title="Air Quality Dashboard",
     page_icon="🌍",
     layout="wide"
 )
 
-# ------------------- LOAD FILES -------------------
+# ---------------- LOAD ----------------
 @st.cache_resource
 def load_model():
     return joblib.load("air_model.pkl")
@@ -31,130 +30,115 @@ model = load_model()
 df = load_data()
 features = load_features()
 
-# ------------------- SIDEBAR -------------------
-st.sidebar.title("🌍 Air Pollution App")
+# ---------------- STYLE ----------------
+st.markdown("""
+    <style>
+    .main {background-color: #f5f7fa;}
+    .stButton>button {
+        background-color: #2E86C1;
+        color: white;
+        border-radius: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-page = st.sidebar.radio(
-    "Navigate",
-    ["🏠 Home", "📊 Data Analysis", "🤖 Prediction", "📈 Visualization", "ℹ️ About"]
-)
+# ---------------- SIDEBAR ----------------
+st.sidebar.title("🌍 Navigation")
+page = st.sidebar.radio("", ["🏠 Dashboard", "📊 Analysis", "🤖 Prediction", "📈 Charts", "ℹ️ About"])
 
-# ------------------- HOME -------------------
-if page == "🏠 Home":
-    st.title("🌫️ Air Pollution Analysis Dashboard")
-
-    st.markdown("""
-    This project analyzes air pollution levels across Indian cities using Machine Learning.
-    
-    ### 🔍 Features:
-    - Data Analysis
-    - Pollution Visualization
-    - Air Quality Prediction
-    - Interactive Dashboard
-    """)
+# ---------------- DASHBOARD ----------------
+if page == "🏠 Dashboard":
+    st.title("🌫️ Air Pollution Dashboard")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Dataset Size", "50,000 Rows")
-    col2.metric("Features", "72 Columns")
+
+    col1.metric("Total Records", len(df))
+    col2.metric("Total Features", df.shape[1])
     col3.metric("Model Accuracy", "99.52%")
 
-    st.image("https://images.unsplash.com/photo-1581092335397-9583eb92d232", use_container_width=True)
+    st.markdown("### 🌍 Overview")
+    st.write("This dashboard analyzes air pollution and predicts air quality.")
 
-# ------------------- DATA ANALYSIS -------------------
-elif page == "📊 Data Analysis":
-    st.title("📊 Dataset Overview")
+# ---------------- ANALYSIS ----------------
+elif page == "📊 Analysis":
+    st.title("📊 Data Analysis")
 
-    st.write("### 🔹 Raw Data")
+    st.subheader("Dataset Preview")
     st.dataframe(df.head())
 
-    st.write("### 🔹 Dataset Info")
+    st.subheader("Statistics")
     st.write(df.describe())
 
-    st.write("### 🔹 Missing Values")
+    st.subheader("Missing Values")
     st.write(df.isnull().sum())
 
-# ------------------- PREDICTION -------------------
+# ---------------- PREDICTION ----------------
 elif page == "🤖 Prediction":
     st.title("🤖 Air Quality Prediction")
 
-    st.sidebar.subheader("Enter Feature Values")
+    st.markdown("Enter pollutant values:")
 
-    input_data = {}
+    col1, col2, col3 = st.columns(3)
 
-    # Dynamic input fields
-    for feature in features[:10]:  # limit for UI simplicity
-        input_data[feature] = st.sidebar.number_input(feature, value=float(df[feature].mean()))
+    inputs = {}
 
-    input_df = pd.DataFrame([input_data])
+    for i, feature in enumerate(features):
+        if feature in df.columns:
+            if i % 3 == 0:
+                inputs[feature] = col1.number_input(feature, float(df[feature].mean()))
+            elif i % 3 == 1:
+                inputs[feature] = col2.number_input(feature, float(df[feature].mean()))
+            else:
+                inputs[feature] = col3.number_input(feature, float(df[feature].mean()))
 
-    st.write("### 🔹 Input Data")
+    input_df = pd.DataFrame([inputs])
+
+    st.write("### Input Data")
     st.dataframe(input_df)
 
-    if st.button("Predict"):
-        prediction = model.predict(input_df)[0]
+    if st.button("🔍 Predict"):
+        result = model.predict(input_df)[0]
 
         st.subheader("Prediction Result")
 
-        # Color indicator
-        if str(prediction).lower() == "good":
-            st.success(f"🟢 {prediction} Air Quality")
-        elif str(prediction).lower() == "moderate":
-            st.warning(f"🟡 {prediction} Air Quality")
+        if str(result).lower() == "good":
+            st.success(f"🟢 {result} Air Quality")
+        elif str(result).lower() == "moderate":
+            st.warning(f"🟡 {result} Air Quality")
         else:
-            st.error(f"🔴 {prediction} Air Quality")
+            st.error(f"🔴 {result} Air Quality")
 
-# ------------------- VISUALIZATION -------------------
-elif page == "📈 Visualization":
-    st.title("📈 Data Visualization")
+# ---------------- CHARTS ----------------
+elif page == "📈 Charts":
+    st.title("📈 Visualizations")
 
     st.subheader("Correlation Heatmap")
-
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10,6))
     sns.heatmap(df.corr(), cmap="coolwarm", ax=ax)
     st.pyplot(fig)
 
-    st.subheader("PM2.5 Distribution")
-
     if "PM2.5" in df.columns:
+        st.subheader("PM2.5 Distribution")
         fig2, ax2 = plt.subplots()
         sns.histplot(df["PM2.5"], kde=True, ax=ax2)
         st.pyplot(fig2)
 
-    st.subheader("City-wise Pollution")
-
-    if "City" in df.columns and "PM2.5" in df.columns:
-        city_data = df.groupby("City")["PM2.5"].mean().sort_values(ascending=False).head(10)
-
-        fig3, ax3 = plt.subplots()
-        city_data.plot(kind="bar", ax=ax3)
-        st.pyplot(fig3)
-
-# ------------------- ABOUT -------------------
+# ---------------- ABOUT ----------------
 elif page == "ℹ️ About":
     st.title("ℹ️ About Project")
 
     st.markdown("""
-    ### 🌍 Air Pollution Analysis in Indian Cities
+    ### 🌍 Air Pollution Analysis
     
-    This project uses Machine Learning to analyze and predict air quality levels.
+    This project predicts air quality using machine learning.
     
-    ### 🛠 Technologies Used:
-    - Python
-    - Pandas, NumPy
-    - Scikit-learn
-    - Streamlit
+    **Model Used:** Random Forest  
+    **Accuracy:** 99.52%  
     
-    ### 📊 Model:
-    - Random Forest Classifier
-    - Accuracy: 99.52%
-    
-    ### 👩‍💻 Developed By:
-    - Your Name
-    
-    ### 🎯 Objective:
-    To predict air quality and help reduce pollution impact.
+    ### 🎯 Goal
+    Help monitor and reduce pollution levels.
     """)
 
-# ------------------- FOOTER -------------------
+# ---------------- FOOTER ----------------
 st.markdown("---")
 st.markdown("Made with ❤️ using Streamlit")
