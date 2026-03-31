@@ -114,7 +114,9 @@ elif page == "📈 Charts":
 
     st.subheader("Correlation Heatmap")
     fig, ax = plt.subplots(figsize=(10,6))
-    sns.heatmap(df.corr(), cmap="coolwarm", ax=ax)
+    numeric_df = df.select_dtypes(include=['number'])
+
+    sns.heatmap(numeric_df.corr(), cmap="coolwarm", ax=ax)
     st.pyplot(fig)
 
     if "PM2.5" in df.columns:
