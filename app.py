@@ -20,9 +20,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 @st.cache_resource
 def load_model():
     try:
-        return joblib.load(os.path.join(BASE_DIR, "air_model.pkl"))
+        return joblib.load(os.path.join(BASE_DIR, "air_pol_pipe_model.pkl"))
     except:
-        st.error("❌ Model file (air_model.pkl) not found")
+        st.error("❌ Model file (air_pol_pipe_model.pkl) not found")
         st.stop()
 
 @st.cache_data
