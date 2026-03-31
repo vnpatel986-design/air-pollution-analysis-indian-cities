@@ -183,7 +183,7 @@ elif page == "ℹ️ About":
     To monitor and reduce air pollution using data-driven insights.
 
     ### 👩‍💻 Developed By:
-    Your Name
+    Priyanshi and vidisha
     """)
 
 # ---------------- FOOTER ----------------
